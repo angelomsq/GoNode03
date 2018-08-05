@@ -1,0 +1,35 @@
+{% extends 'layouts/default.njk' %}
+
+{% block body %}
+  <div class="wrapper">
+    {% include 'partials/header.njk' %}
+
+    <section id="main">
+      <div class="container">
+        <header>
+          <h2>Meus projetos ({{ projects.length }})</h2>
+          <div class="addon">
+            <form action="/app/projects/create" method="post">
+              <input type="text" name="title" placeholder="Novo projeto">
+              <button type="submit" class="btn">
+                <img src="/img/plus.svg">
+              </button>
+            </form>
+          </div>
+        </header>
+
+        <section id="content">
+          <div class="project-list">
+            {% if (projects.length > 0) %}
+              {% for project in projects %}
+                <a href="/app/projects/{{ project.id }}">{{ project.title }}</a>
+              {% endfor %}
+            {% else%}
+              <h2>Nenhum Projeto cadastrado.</h2>
+            {% endif%}
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+{% endblock %}

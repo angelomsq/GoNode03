@@ -1,0 +1,27 @@
+{% extends 'layouts/default.njk' %}
+
+{% block body %}
+  <div class="wrapper">
+    {% include 'partials/header.njk' %}
+    <section id="main">
+      <div class="container">
+
+        {% include 'partials/projectHeader.njk' %}
+
+        <section id="content">
+          {% include 'partials/sections.njk' %}
+
+          <article>
+            <form action="/app/projects/{{ project.id }}/sections/{{ currentSection.id }}?_method=DELETE" method="POST">
+              <button type="submit" class="btn btn-danger btn-xs pull-right">Remover seção</button>
+            </form>
+            <div class="project-header">
+              <h1>{{ currentSection.title }}</h1>
+            </div>
+            {{ currentSection.formattedContent | safe }}
+          </article>
+        </section>
+      </div>
+    </section>
+  </div>
+{% endblock %}

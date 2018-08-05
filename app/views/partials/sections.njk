@@ -1,0 +1,27 @@
+<nav>
+  <div class="sessions">
+    <h2 class="title">Seções</h2>
+    {% if (sections.length > 0) %}
+      {% for section in sections %}
+        <a href="/app/projects/{{ project.id }}/sections/{{ section.id }}">{{ section.title }}</a>
+      {% endfor %}
+    {% else%}
+      <h4>Nenhuma Seção cadastrada.</h4>
+    {% endif%}
+  </div>
+
+  <a href="#" class="btn btn-block" data-modal-open="#new-section">NOVA SEÇÃO <img src="/img/plus.svg"></a>
+</nav>
+
+<div class="modal" id="new-section">
+  <form action="/app/projects/{{ project.id }}/sections/create" class="modal-content" method="POST">
+    <input type="text" name="title" id="title" placeholder="Título da Seção">
+
+    <div class="content-container">
+      <textarea name="content" id="content" class="mde" placeholder="Conteúdo da Seção"></textarea>
+    </div>
+
+    <button type="submit">CRIAR SEÇÃO</button>
+    <a href="#" data-modal-close="#new-section">CANCELAR</a>
+  </form>
+</div>
