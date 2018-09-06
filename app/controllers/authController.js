@@ -1,45 +1,49 @@
-const bcrypt = require('bcryptjs');
-const { User } = require('../models');
+const mongoose = require('mongoose');
+
+const User = mongoose.model('User');
+
+const sendMail = require('../services/mailer');
 
 module.exports = {
-  signin(req, res) {
-    res.render('auth/signin');
-  },
-
-  signup(req, res) {
-    res.render('auth/signup');
-  },
-
-  signout(req, res) {
-    return req.session.destroy(() => {
-      res.redirect('/');
-    });
-  },
-
   async register(req, res, next) {
     try {
-      const { email, name } = req.body;
+      const { email, username, name } = req.body;
 
       if (name.length === 0) {
-        req.flash('error', 'Preencha seu Nome.');
-        return res.redirect('back');
+        return res.status(400).json({
+          error: 'The Name field is empty, it is a required field and must be filled in.',
+        });
       }
 
       if (email.length === 0) {
-        req.flash('error', 'Preencha seu E-mail.');
-        return res.redirect('back');
+        return res.status(400).json({
+          error: 'The E-Mail field is empty, it is a required field and must be filled in.',
+        });
       }
 
-      if (await User.findOne({ where: { email } })) {
-        req.flash('error', 'E-mail já cadastrado.');
-        return res.redirect('back');
+      if (await User.findOne({ $or: [{ email }, { username }] })) {
+        return res.status(400).json({ error: 'A User already exists with this credentials.' });
       }
 
-      const password = await bcrypt.hash(req.body.password, 5);
+      const user = await User.create(req.body);
 
-      await User.create({ ...req.body, password });
-      req.flash('success', 'Usuário cadastrado com sucesso!');
-      return res.redirect('/');
+      sendMail({
+        from: 'Angelo Queiroz <contato@angeloqueiroz.com>',
+        to: user.email,
+        subject: `Bem-vindo ao FaceClone, ${user.name}`,
+        template: 'auth/register',
+        context: {
+          header: `Seja Bem-vindo ${user.name}, agredecemos por ter efetuado cadastro conosco.`,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+        },
+      });
+
+      return res.json({
+        user,
+        token: user.generateToken(),
+      });
     } catch (err) {
       return next(err);
     }
@@ -50,25 +54,30 @@ module.exports = {
       const { email, password } = req.body;
 
       if (email.length === 0) {
-        req.flash('error', 'Preencha seu E-mail.');
-        return res.redirect('back');
+        return res.status(400).json({
+          error: 'The E-Mail field is empty, it is a required field and must be filled in.',
+        });
       }
 
-      const user = await User.findOne({ where: { email } });
+      if (password.length === 0) {
+        return res.status(400).json({
+          error: 'The Password field is empty, it is a required field and must be filled in.',
+        });
+      }
+
+      const user = await User.findOne({ email });
 
       if (!user) {
-        req.flash('error', 'Usuário inexistente');
-        return res.redirect('back');
+        return res.status(400).json({ error: 'User not found.' });
       }
 
-      if (!(await bcrypt.compare(password, user.password))) {
-        req.flash('error', 'Senha incorreta');
-        return res.redirect('back');
+      if (!(await user.checkPassword(password))) {
+        return res.status(400).json({ error: 'Invalid password.' });
       }
 
-      req.session.user = user;
-      return req.session.save(() => {
-        res.redirect('/app/dashboard');
+      return res.json({
+        user,
+        token: user.generateToken(),
       });
     } catch (err) {
       return next(err);

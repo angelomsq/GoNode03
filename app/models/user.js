@@ -1,13 +1,56 @@
-module.exports = (sequelize, DataTypes) => {
-  const User = sequelize.define('User', {
-    name: DataTypes.STRING,
-    email: DataTypes.STRING,
-    password: DataTypes.STRING,
-  });
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const authConfig = require('../../config/auth');
 
-  User.associate = (models) => {
-    User.hasMany(models.Project);
-  };
+const UserSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  friends: [
+    {
+      type: mongoose.Schema.ObjectId,
+      ref: 'User',
+    },
+  ],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
-  return User;
+UserSchema.pre('save', async function hashPassword(next) {
+  if (!this.isModified('password')) next();
+
+  this.password = await bcrypt.hash(this.password, 8);
+});
+
+UserSchema.methods = {
+  checkPassword(password) {
+    return bcrypt.compare(password, this.password);
+  },
+
+  generateToken() {
+    return jwt.sign({ id: this.id }, authConfig.secret, {
+      expiresIn: 86400,
+    });
+  },
 };
+
+mongoose.model('User', UserSchema);

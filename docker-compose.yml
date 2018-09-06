@@ -8,16 +8,41 @@ services:
       - "3000"
     volumes:
       - ./:/usr/app
-    external_links:
-      - mysql_srv
+    links:
+      - mongo
+    depends_on:
+      - mongo
     environment:
-        DB_DATABASE: docfy
-        DB_USERNAME: root
-        DB_PASSWORD: root
-        DB_HOST: mysql_srv
-        DB_CONNECTION: mysql
-        VIRTUAL_HOST: docfy.server.localhost
-        VIRTUAL_PORT: 3000
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      VIRTUAL_HOST: faceclone.server.localhost
+      VIRTUAL_PORT: 3000
+  mongo:
+    image: mongo:latest
+    command: mongod --smallfiles --logpath=/dev/null # --quiet
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - /srv/docker/volumes/mongodb:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+      MONGO_DATA_DIR: "/data/db"
+      MONGO_LOG_DIR: "/dev/null"
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - "8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${DB_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${DB_PASSWORD}
+      VIRTUAL_HOST: mongodb.server.localhost
+      VIRTUAL_PORT: 80
 networks:
   default:
     external:

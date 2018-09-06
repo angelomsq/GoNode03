@@ -2,62 +2,56 @@ const express = require('express');
 
 const routes = express.Router();
 
+const requireDir = require('require-dir');
+
+const controllers = requireDir('./controllers');
+
+// console.log(controllers);
+
 const authMiddleware = require('./middlewares/authMiddleware');
-const guestMiddleware = require('./middlewares/guestMiddleware');
 
-const authController = require('./controllers/authController');
-const dashboardController = require('./controllers/dashboardController');
-const projectController = require('./controllers/projectController');
-const sectionController = require('./controllers/sectionController');
-
-routes.use((req, res, next) => {
-  res.locals.flashSuccess = req.flash('success');
-  res.locals.flashError = req.flash('error');
-  next();
-});
+// const authController = require('./controllers/authController');
+// const dashboardController = require('./controllers/dashboardController');
+// const projectController = require('./controllers/projectController');
+// const sectionController = require('./controllers/sectionController');
 
 /**
- * Auth
+ * Auth Routes
  */
-routes.get('/', guestMiddleware, authController.signin);
-routes.get('/signup', guestMiddleware, authController.signup);
-routes.get('/signout', authController.signout);
 
-routes.post('/register', authController.register);
-routes.post('/authenticate', authController.authenticate);
+routes.post('/register', controllers.authController.register);
+routes.post('/authenticate', controllers.authController.authenticate);
+
+/** ===============================
+ * AUTHETICATED ROUTES AFTER HERE *
+ ================================ */
+
+routes.use(authMiddleware);
 
 /**
- * Dashboard
+ * User Routes
  */
-routes.use('/app', authMiddleware);
-routes.get('/app/dashboard', dashboardController.index);
+
+routes.put('/users', controllers.userController.update);
+routes.get('/users/account', controllers.userController.account);
+routes.post('/users/:id/addfriend', controllers.userController.addFriend);
+routes.post('/users/:id/removefriend', controllers.userController.removeFriend);
+routes.get('/feed', controllers.userController.feed);
 
 /**
- * Project
+ * Post Routes
  */
 
-routes.get('/app/projects/:id', projectController.show);
-routes.post('/app/projects/create', projectController.store);
-routes.delete('/app/projects/:id', projectController.destroy);
+routes.post('/posts/create', controllers.postController.create);
+routes.delete('/posts/:id', controllers.postController.destroy);
+routes.post('/posts/:id/like', controllers.postController.like);
 
 /**
- * Section
+ * Comment Routes
  */
 
-routes.get('/app/projects/:projectId/sections/:id', sectionController.show);
-routes.post('/app/projects/:projectId/sections/create', sectionController.store);
-routes.put('/app/projects/:projectId/sections/:id', sectionController.update);
-routes.delete('/app/projects/:projectId/sections/:id', sectionController.destroy);
-
-routes.use((req, res) => res.render('errors/404'));
-
-routes.use((err, req, res, _next) => {
-  res.status(err.status || 500);
-
-  return res.render('errors/index', {
-    message: err.message,
-    error: process.env.NODE_ENV === 'production' ? {} : err,
-  });
-});
+routes.post('/posts/:id/comments/create', controllers.commentController.create);
+routes.delete('/comments/:id', controllers.commentController.destroy);
+routes.post('/comments/:id/like', controllers.commentController.like);
 
 module.exports = routes;

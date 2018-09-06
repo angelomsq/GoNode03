@@ -1,31 +1,31 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const nunjucks = require('nunjucks');
-const session = require('express-session');
-const path = require('path');
-const flash = require('connect-flash');
-const methodOverride = require('method-override');
+require('dotenv').config();
 
-const routes = require('./app/routes');
-const sessionConfig = require('./config/session');
+const app = require('express')();
+const mongoose = require('mongoose');
+const requireDir = require('require-dir');
+const bodyParser = require('body-parser');
+const path = require('path');
+const Raven = require('./app/services/sentry');
+
+const dbConfig = require('./config/database');
+
+console.log(dbConfig.url);
+
+mongoose.connect(
+  dbConfig.url,
+  { useNewUrlParser: true },
+);
+requireDir(dbConfig.modelsPath);
+
+app.use(bodyParser.json());
+
+app.use(Raven.requestHandler());
+
+app.use('/api', require('./app/routes'));
+
+app.use(Raven.errorHandler());
 
 const PORT = 3000;
 const HOST = '0.0.0.0';
-
-const app = express();
-app.use(express.static(path.resolve('app', 'public')));
-
-nunjucks.configure(path.resolve('app', 'views'), {
-  autoescape: true,
-  express: app,
-});
-
-app.set('view engine', 'njk');
-
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(session(sessionConfig));
-app.use(flash());
-app.use(methodOverride('_method'));
-app.use('/', routes);
 
 app.listen(PORT, HOST);

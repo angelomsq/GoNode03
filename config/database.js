@@ -1,11 +1,8 @@
+const path = require('path');
+
 module.exports = {
-  username: process.env.DB_PASSWORD,
-  password: process.env.DB_USERNAME,
-  database: process.env.DB_DATABASE,
-  host: process.env.DB_HOST,
-  dialect: 'mysql',
-  pool: {
-    maxConnections: 5,
-    maxIdleTime: 30,
-  },
+  url: `mongodb://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${
+    process.env.DB_PORT
+  }/${process.env.DB_DATABASE}?authSource=admin`,
+  modelsPath: path.resolve('app', 'models'),
 };
